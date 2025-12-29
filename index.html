@@ -5,7 +5,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>中油輪班 - 多班別版</title>
+    <title>中油輪班 - 字體自由版</title>
     
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
@@ -14,8 +14,10 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-    <!-- 引入 Cinzel 字體 (保留給英文數字用，中文用標楷體) -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap" rel="stylesheet">
+    <!-- 引入 Google Fonts (思源黑體、思源宋體、Cinzel) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Noto+Sans+TC:wght@400;700&family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
@@ -41,11 +43,14 @@
             --c-memo:  #ff4d4d;
             --text-sub: rgba(255, 255, 255, 0.6);
             --sync-status-color: #444; 
+
+            /* ★ 字體變數 (預設標楷體) ★ */
+            --app-font: "BiauKai", "DfKai-SB", "KaiTi", "標楷體", serif;
         }
 
         body {
-            /* ★ 重點修改：中文字體改為標楷體 ★ */
-            font-family: "BiauKai", "DfKai-SB", "KaiTi", "標楷體", serif, sans-serif;
+            /* 使用變數控制字體 */
+            font-family: var(--app-font);
             margin: 0; padding: 0;
             color: var(--text-main);
             height: 100vh;
@@ -78,11 +83,10 @@
             transition: background 0.2s, backdrop-filter 0.2s; 
         }
 
-        /* --- Header 改版：三欄式佈局 --- */
         header {
             padding: 15px 20px; 
             display: grid; 
-            grid-template-columns: 1fr auto 1fr; /* 左 中 右 */
+            grid-template-columns: 1fr auto 1fr;
             align-items: center;
             border-bottom: 1px solid var(--glass-border); 
             flex-shrink: 0;
@@ -95,10 +99,7 @@
         .header-info h1 { margin: 0; font-size: 1.3rem; font-family: 'Cinzel', serif; text-shadow: 0 2px 10px rgba(0,0,0,0.3); color: var(--text-main); }
         .header-info p { margin: 2px 0 0 0; font-size: 0.7rem; color: var(--text-sub); }
 
-        /* 班別選擇器樣式 */
-        .shift-select-wrapper {
-            position: relative;
-        }
+        .shift-select-wrapper { position: relative; }
         #shiftSelect {
             appearance: none;
             background: rgba(255, 255, 255, 0.1);
@@ -106,17 +107,14 @@
             color: var(--text-main);
             padding: 5px 15px;
             border-radius: 20px;
-            font-family: "BiauKai", "標楷體", serif;
+            font-family: inherit; /* 跟隨系統設定 */
             font-size: 1rem;
             font-weight: bold;
             text-align: center;
             cursor: pointer;
             backdrop-filter: blur(5px);
         }
-        #shiftSelect option {
-            background: #333;
-            color: #fff;
-        }
+        #shiftSelect option { background: #333; color: #fff; }
 
         .nav-btn {
             background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
@@ -134,7 +132,7 @@
 
         .week-header {
             display: grid; grid-template-columns: repeat(7, 1fr);
-            text-align: center; margin-bottom: 8px; font-size: 0.85rem; /* 字體加大 */
+            text-align: center; margin-bottom: 8px; font-size: 0.85rem;
             color: var(--text-sub); letter-spacing: 1px;
             font-weight: bold;
         }
@@ -154,7 +152,9 @@
         .day-card {
             background: rgba(var(--cell-bg-color), var(--cell-bg-opacity));
             border: 1px solid rgba(var(--cell-border-color), var(--cell-border-opacity));
-            border-radius: 12px; height: 85px; 
+            border-radius: 12px; 
+            /* ★ 高度調整：85px -> 110px，讓底部不被切到 ★ */
+            height: 110px; 
             overflow: hidden; display: flex; flex-direction: column;
             align-items: center; padding: 6px 2px; position: relative;
             cursor: pointer; box-sizing: border-box;
@@ -167,8 +167,7 @@
             background: rgba(var(--cell-bg-color), 0.2); 
             box-shadow: 0 0 15px rgba(var(--cell-bg-color), 0.2);
         }
-        /* 日期數字保留 Cinzel 字體，比較好看 */
-        .day-num { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+        .day-num { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
         
         .is-holiday .day-num, .is-weekend .day-num {
             color: var(--holiday-red) !important;
@@ -176,12 +175,12 @@
         }
         .holiday-name {
             font-size: 0.7rem; color: var(--holiday-red);
-            margin-top: -4px; margin-bottom: 2px; font-weight: bold; opacity: 0.9;
+            margin-top: -2px; margin-bottom: 2px; font-weight: bold; opacity: 0.9;
         }
-        .shift-text { font-size: 0.95rem; font-weight: bold; margin-bottom: auto; } /* 班別字體加大 */
+        .shift-text { font-size: 0.95rem; font-weight: bold; margin-bottom: auto; margin-top: 2px;} 
         .t-早 { color: var(--c-day); }
         .t-中 { color: var(--c-mid); }
-        .t-晚 { color: var(--c-night); } /* 這裡對應程式中的 '晚' */
+        .t-晚 { color: var(--c-night); } 
         .t-休 { color: var(--c-off); }
         
         .memo-dot {
@@ -190,12 +189,16 @@
             border-radius: 50%; display: none; box-shadow: 0 0 4px var(--text-main);
         }
         .has-memo .memo-dot { display: block; }
+        
         .memo-preview { 
-            font-size: 0.7rem; color: var(--c-memo); font-weight: bold;
+            font-size: 0.75rem; color: var(--c-memo); font-weight: bold;
             width: 95%; text-align: center; white-space: nowrap; 
-            overflow: hidden; text-overflow: ellipsis; margin-top: 4px; 
-            height: 14px; opacity: 1; 
+            overflow: hidden; text-overflow: ellipsis; 
+            /* 調整間距，確保在下方有空間 */
+            margin-top: auto; margin-bottom: 6px;
+            height: 16px; opacity: 1; 
         }
+        
         .footer-controls { padding: 10px; border-top: 1px solid var(--glass-border); text-align: center; font-size: 0.7rem; color: var(--text-sub); display: flex; justify-content: center; align-items: center;}
 
         /* Modal */
@@ -222,10 +225,10 @@
             width: 100%; height: 100px; background: rgba(0,0,0,0.2);
             border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; padding: 10px;
             font-size: 1.1rem; box-sizing: border-box; resize: none; margin: 15px 0;
-            font-family: "BiauKai", "標楷體", serif; /* 備忘錄也用標楷體 */
+            font-family: inherit; /* 跟隨設定字體 */
         }
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .m-btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; font-family: "BiauKai", "標楷體", serif;}
+        .m-btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 0.95rem; font-family: inherit;}
         .btn-close { background: rgba(255,255,255,0.1); color: #ccc; }
         .btn-save { background: var(--c-day); color: #000; }
 
@@ -247,6 +250,11 @@
         .range-desc { display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa; margin-bottom: 5px;}
         
         .sync-input { width: 100%; background: #333; color: #00ff9d; border: 1px solid #555; padding: 10px; border-radius: 8px; font-family: monospace; letter-spacing: 2px; text-align: center; font-size: 1.1rem; box-sizing: border-box;}
+        
+        /* 字體選擇下拉選單 */
+        .font-select {
+            width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 8px; font-size: 1rem; margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -258,7 +266,6 @@
                 <p id="locationText">TOKYO</p>
             </div>
             
-            <!-- 新增：中央班別選擇器 -->
             <div class="header-center">
                 <div class="shift-select-wrapper">
                     <select id="shiftSelect" onchange="changeShiftMode(this.value)">
@@ -292,7 +299,7 @@
             </div>
         </div>
         <div class="footer-controls">
-            雲端連線版 <div class="sync-indicator" id="syncLight"></div>
+            雲端連線版 v16.0 <div class="sync-indicator" id="syncLight"></div>
         </div>
     </div>
 
@@ -321,15 +328,22 @@
                 <p id="syncStatusText" style="font-size:0.8rem; color:#888; text-align:center; margin-top:5px;">狀態: 單機模式</p>
             </div>
 
+            <!-- 字體選擇 -->
+            <div class="setting-section">
+                <span class="setting-label">介面字體 (Font)</span>
+                <select id="fontSelect" class="font-select" onchange="updateAppFont()">
+                    <!-- 選項由 JS 動態產生 -->
+                </select>
+            </div>
+
             <div class="setting-section">
                 <span class="setting-label">自訂背景圖片</span>
-                <p style="font-size:0.8rem; color:#ccc; margin-bottom:5px;">上傳一張圖作為全年背景</p>
                 <input type="file" id="bgInput" accept="image/*" style="font-size:0.9rem; color:#aaa;">
                 <button class="m-btn btn-close" onclick="resetBackground()" style="margin-top:10px; width:100%; font-size:0.9rem;">清除自訂背景</button>
             </div>
 
             <div class="setting-section">
-                <span class="setting-label">視覺效果 (Visual)</span>
+                <span class="setting-label">視覺效果</span>
                 <div class="range-desc"><span>透明度</span></div>
                 <input type="range" id="opacitySlider" min="0.1" max="0.95" step="0.05" value="0.6" oninput="updateGlassStyle()">
                 <div class="range-desc" style="margin-top:10px;"><span>模糊度</span></div>
@@ -341,7 +355,7 @@
             </div>
 
             <div class="setting-section">
-                <span class="setting-label">主題配色 (Colors)</span>
+                <span class="setting-label">主題配色</span>
                 <div class="color-list-item"><span class="color-label">一般文字</span><input type="color" id="colorText"></div>
                 <div class="color-list-item"><span class="color-label">早班 (Day)</span><input type="color" id="colorDay"></div>
                 <div class="color-list-item"><span class="color-label">中班 (Mid)</span><input type="color" id="colorMid"></div>
@@ -380,29 +394,43 @@
         try { firebase.initializeApp(firebaseConfig); db = firebase.database(); } catch(e) {}
 
         const BASE_DATE = new Date('2026-01-01');
-        
-        // ★ 核心升級：定義四種班別 (晚取代夜，以配合紫色 CSS) ★
         const SHIFTS = {
             'A': ['中', '中', '休', '晚', '晚', '休', '早', '早'],
             'B': ['休', '晚', '晚', '休', '早', '早', '中', '中'],
-            'C': ['晚', '休', '早', '早', '中', '中', '休', '晚'], // 這裡用'晚'代表'夜'
+            'C': ['晚', '休', '早', '早', '中', '中', '休', '晚'],
             'D': ['早', '早', '中', '中', '休', '晚', '晚', '休']
         };
 
         const DEFAULT_HOLIDAYS = { '2026-01-01': '元旦', '2026-02-18': '春節', '2026-06-19': '端午節', '2026-09-25': '中秋節', '2026-10-10': '國慶日' };
+        
+        // ★ 修復背景圖連結 ★
         const MONTH_DATA = [
             { img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1920', name: 'TOKYO' },
-            { img: 'https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?q=80&w=1920', name: 'PARIS' },
+            { img: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=1920', name: 'PARIS' }, // 新的巴黎圖
             { img: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?q=80&w=1920', name: 'MT. FUJI' },
             { img: 'https://images.unsplash.com/photo-1605130284535-11dd9eedc58a?q=80&w=1920', name: 'NEW YORK' },
             { img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1920', name: 'ROME' },
             { img: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=1920', name: 'INDIA' },
-            { img: 'https://images.unsplash.com/photo-1624138784180-40c4efe51fa2?q=80&w=1920', name: 'SYDNEY' },
+            { img: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=1920', name: 'SYDNEY' }, // 新的雪梨圖
             { img: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1920', name: 'EGYPT' },
             { img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=1920', name: 'LONDON' },
             { img: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?q=80&w=1920', name: 'BEIJING' },
             { img: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1920', name: 'SF' },
             { img: 'https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=1920', name: 'TAIPEI' }
+        ];
+
+        // ★ 字體選項清單 ★
+        const FONT_OPTIONS = [
+            { name: "標楷體 (BiauKai)", val: "\"BiauKai\", \"DfKai-SB\", \"KaiTi\", \"標楷體\", serif" },
+            { name: "微軟正黑體", val: "\"Microsoft JhengHei\", \"Microsoft JhengHei UI\", sans-serif" },
+            { name: "新細明體 (PMingLiU)", val: "\"PMingLiU\", \"MingLiU\", serif" },
+            { name: "思源黑體 (Noto Sans)", val: "\"Noto Sans TC\", sans-serif" },
+            { name: "思源宋體 (Noto Serif)", val: "\"Noto Serif TC\", serif" },
+            { name: "黑體 (Heiti)", val: "\"Heiti TC\", sans-serif" },
+            { name: "圓體 (Yuan)", val: "\"Yuanti SC\", sans-serif" },
+            { name: "系統預設 (Default)", val: "-apple-system, BlinkMacSystemFont, sans-serif" },
+            { name: "宋體 (Song)", val: "\"Songti SC\", serif" },
+            { name: "Arial (英數)", val: "Arial, Helvetica, sans-serif" }
         ];
 
         const DEFAULT_COLORS = { text: '#f0f0f0', day: '#6b93d6', mid: '#e09f6c', night: '#a67bc1', off: '#d66b6b', memo: '#ff4d4d' };
@@ -412,19 +440,28 @@
         let currentEditDate = '';
         let isAnimating = false;
         let localMemos = JSON.parse(localStorage.getItem('shift_memos_v7')) || {};
-        
-        // 讀取現在選的是哪個班，預設 A 班
         let currentShiftMode = localStorage.getItem('shift_current_mode') || 'A';
 
-        let userSettings = JSON.parse(localStorage.getItem('shift_settings_v14')) || { 
+        let userSettings = JSON.parse(localStorage.getItem('shift_settings_v16')) || { 
             customBg: null, 
-            visual: { opacity: 0.6, blur: 15, baseColor: '#141423' }, 
+            visual: { opacity: 0.6, blur: 15, baseColor: '#141423', font: FONT_OPTIONS[0].val }, // 增加字體設定
             colors: { ...DEFAULT_COLORS }, 
             holidays: DEFAULT_HOLIDAYS 
         };
         
+        // 確保設定相容性
+        if(!userSettings.visual.font) userSettings.visual.font = FONT_OPTIONS[0].val;
+
         function init() {
-            // 初始化班別選擇器
+            // 填充字體選單
+            const fontSelect = document.getElementById('fontSelect');
+            FONT_OPTIONS.forEach(opt => {
+                const el = document.createElement('option');
+                el.value = opt.val;
+                el.innerText = opt.name;
+                fontSelect.appendChild(el);
+            });
+
             document.getElementById('shiftSelect').value = currentShiftMode;
             
             applySettings(); updateBackground(); renderCalendar(); setupSwipe(); 
@@ -433,20 +470,16 @@
             if(currentSyncId && db) startFirebaseListener(currentSyncId);
         }
 
-        // --- 切換班別邏輯 ---
         function changeShiftMode(mode) {
             currentShiftMode = mode;
             localStorage.setItem('shift_current_mode', mode);
-            renderCalendar(); // 重新渲染
+            renderCalendar();
         }
 
         function getShift(d) {
             const oneDay = 86400000;
             const diff = Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate()) - new Date(BASE_DATE.getFullYear(),BASE_DATE.getMonth(),BASE_DATE.getDate()))/oneDay);
-            
-            // 根據目前選擇的模式 (A/B/C/D) 取得對應的陣列
             const cycle = SHIFTS[currentShiftMode]; 
-            
             let i = diff % cycle.length; 
             if(i < 0) i += cycle.length; 
             return cycle[i]; 
@@ -489,11 +522,24 @@
             document.documentElement.style.setProperty('--glass-blur', bl + 'px');
         }
         function updateGlassBase(hex) { document.documentElement.style.setProperty('--glass-rgb', hexToRgb(hex)); }
+        
+        // 即時預覽字體
+        function updateAppFont() {
+            const fontVal = document.getElementById('fontSelect').value;
+            document.documentElement.style.setProperty('--app-font', fontVal);
+        }
 
         function applySettings() {
             const r=document.documentElement.style, c=userSettings.colors, v=userSettings.visual;
             r.setProperty('--text-main',c.text); r.setProperty('--c-day',c.day); r.setProperty('--c-mid',c.mid); r.setProperty('--c-night',c.night); r.setProperty('--c-off',c.off); r.setProperty('--c-memo',c.memo);
             r.setProperty('--glass-rgb',hexToRgb(v.baseColor)); r.setProperty('--glass-opacity',v.opacity); r.setProperty('--glass-blur',v.blur+'px');
+            
+            // 套用字體
+            if(v.font) {
+                r.setProperty('--app-font', v.font);
+                document.getElementById('fontSelect').value = v.font;
+            }
+
             document.getElementById('colorText').value=c.text; document.getElementById('colorDay').value=c.day; document.getElementById('colorMid').value=c.mid; document.getElementById('colorNight').value=c.night; document.getElementById('colorOff').value=c.off; document.getElementById('colorMemo').value=c.memo;
             document.getElementById('glassBaseColor').value=v.baseColor; document.getElementById('opacitySlider').value=v.opacity; document.getElementById('blurSlider').value=v.blur;
             document.getElementById('holidayJson').value = JSON.stringify(userSettings.holidays, null, 2);
@@ -508,9 +554,13 @@
             const u = userSettings;
             u.colors.text = document.getElementById('colorText').value; u.colors.day = document.getElementById('colorDay').value; u.colors.mid = document.getElementById('colorMid').value; u.colors.night = document.getElementById('colorNight').value; u.colors.off = document.getElementById('colorOff').value; u.colors.memo = document.getElementById('colorMemo').value;
             u.visual.baseColor = document.getElementById('glassBaseColor').value; u.visual.opacity = document.getElementById('opacitySlider').value; u.visual.blur = document.getElementById('blurSlider').value;
+            
+            // 儲存字體
+            u.visual.font = document.getElementById('fontSelect').value;
+
             if(tempBgData === 'RESET') u.customBg = null; else if(tempBgData) u.customBg = tempBgData;
             try { u.holidays = JSON.parse(document.getElementById('holidayJson').value); } catch(e){ alert("假日格式錯誤"); }
-            localStorage.setItem('shift_settings_v14', JSON.stringify(u));
+            localStorage.setItem('shift_settings_v16', JSON.stringify(u));
             applySettings(); updateBackground(); renderCalendar(); closeSettings(); tempBgData=null;
         }
 
