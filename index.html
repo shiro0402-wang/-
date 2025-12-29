@@ -2,12 +2,12 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 這一行讓網頁在手機上看起來像 App (隱藏網址列) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>中油輪班 - 永續版</title>
+    <title>中油輪班 - 滑動手勢版</title>
     
+    <!-- 請確認你的 icon.png 已經上傳到 GitHub -->
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
@@ -24,6 +24,7 @@
             --c-night: #a67bc1;
             --c-off:   #d66b6b;
             --holiday-red: #ff4d4d;
+            --c-memo:  #ff4d4d; /* 新增：預設備忘錄顏色 (紅) */
             --text-sub: rgba(255, 255, 255, 0.6);
         }
 
@@ -37,9 +38,11 @@
             background-size: cover;
             background-position: center;
             transition: background-image 0.6s ease-in-out;
-            /* iOS 安全區域適配 */
             padding-top: env(safe-area-inset-top);
             padding-bottom: env(safe-area-inset-bottom);
+            /* 禁止選取文字，讓滑動體驗更好 */
+            user-select: none; 
+            -webkit-user-select: none;
         }
 
         .bg-overlay {
@@ -77,7 +80,11 @@
         .nav-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
         .settings-btn { font-size: 1.2rem; border: none; background: transparent; }
 
-        .calendar-body { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; }
+        .calendar-body { 
+            flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; 
+            /* 讓觸控更靈敏 */
+            touch-action: pan-y; 
+        }
 
         .week-header {
             display: grid; grid-template-columns: repeat(7, 1fr);
@@ -99,7 +106,6 @@
 
         .day-num { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
         
-        /* 國定假日與週末紅字 */
         .is-holiday .day-num, .is-weekend .day-num {
             color: var(--holiday-red) !important;
             text-shadow: 0 0 8px rgba(255, 77, 77, 0.6);
@@ -122,7 +128,21 @@
             border-radius: 50%; display: none; box-shadow: 0 0 4px var(--text-main);
         }
         .has-memo .memo-dot { display: block; }
-        .memo-preview { font-size: 0.6rem; color: var(--text-sub); width: 90%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; height: 12px; opacity: 0.8; }
+        
+        /* 備忘錄預覽樣式更新：使用自訂變數，並加粗 */
+        .memo-preview { 
+            font-size: 0.65rem; 
+            color: var(--c-memo); 
+            font-weight: bold;
+            width: 95%; 
+            text-align: center; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            margin-top: 4px; 
+            height: 14px; 
+            opacity: 1; 
+        }
 
         .footer-controls { padding: 10px; border-top: 1px solid var(--glass-border); text-align: center; font-size: 0.7rem; color: var(--text-sub); }
 
@@ -175,7 +195,9 @@
                 <button class="nav-btn" onclick="changeMonth(1)">❯</button>
             </div>
         </header>
-        <div class="calendar-body">
+        
+        <!-- 加入 id 以便 JS 監聽滑動事件 -->
+        <div class="calendar-body" id="swipeArea">
             <div class="week-header">
                 <div style="color:var(--c-off)">SUN</div>
                 <div>MON</div>
@@ -187,7 +209,7 @@
             </div>
             <div class="grid" id="calendarGrid"></div>
         </div>
-        <div class="footer-controls">中油輪班系統 v7.0 | 六日紅字版</div>
+        <div class="footer-controls">中油輪班系統 v8.0 | 滑動版</div>
     </div>
 
     <!-- Memos Modal -->
@@ -220,11 +242,12 @@
                 <div class="color-row"><span>中班顏色</span><input type="color" id="colorMid"></div>
                 <div class="color-row"><span>晚班顏色</span><input type="color" id="colorNight"></div>
                 <div class="color-row"><span>休假顏色</span><input type="color" id="colorOff"></div>
+                <!-- 新增備忘錄顏色設定 -->
+                <div class="color-row"><span>備忘錄顏色</span><input type="color" id="colorMemo"></div>
             </div>
 
             <div class="setting-section" style="border:none;">
                 <span class="setting-label">假日資料庫 (更新 JSON)</span>
-                <p style="font-size:0.65rem; color:#888; margin:2px 0 5px;">若有新年度假日，請依照格式貼入下方：</p>
                 <textarea id="holidayJson" class="json-area"></textarea>
                 <button class="m-btn btn-close" onclick="resetHolidays()" style="font-size:0.7rem; margin-top:5px;">重置回預設 2026</button>
             </div>
@@ -241,7 +264,6 @@
         const BASE_DATE = new Date('2026-01-01');
         const SHIFT_CYCLE = ['中', '中', '休', '晚', '晚', '休', '早', '早'];
 
-        // 預設 2026 假日表 (Hardcoded)
         const DEFAULT_HOLIDAYS = {
             '2026-01-01': '元旦', '2026-02-16': '小年夜', '2026-02-17': '除夕', '2026-02-18': '春節',
             '2026-02-19': '初二', '2026-02-20': '初三', '2026-02-28': '228紀念', '2026-02-27': '228連假',
@@ -265,28 +287,63 @@
             { img: 'https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=1920&fit=crop', name: 'TAIPEI, TAIWAN' }
         ];
 
-        const DEFAULT_COLORS = { text: '#f0f0f0', day: '#6b93d6', mid: '#e09f6c', night: '#a67bc1', off: '#d66b6b' };
+        // 新增 memo 預設紅色
+        const DEFAULT_COLORS = { 
+            text: '#f0f0f0', day: '#6b93d6', mid: '#e09f6c', 
+            night: '#a67bc1', off: '#d66b6b', memo: '#ff4d4d' 
+        };
 
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
         let currentEditDate = '';
 
-        // 從 LocalStorage 讀取設定，包含自訂的假日列表
-        let userSettings = JSON.parse(localStorage.getItem('shift_settings_v7')) || {
+        // 讀取設定
+        let userSettings = JSON.parse(localStorage.getItem('shift_settings_v8')) || {
             customBg: null,
             colors: { ...DEFAULT_COLORS },
-            holidays: DEFAULT_HOLIDAYS // 儲存假日資料
+            holidays: DEFAULT_HOLIDAYS
         };
+
+        // ★ 自動修補機制：防止舊版用戶沒有 memo 顏色導致出錯 ★
+        userSettings.colors = { ...DEFAULT_COLORS, ...userSettings.colors };
 
         function init() {
             applySettings();
             updateBackground();
             renderCalendar();
-            // 預載圖片
+            setupSwipe(); // 啟動滑動監聽
             MONTH_DATA.forEach(d => new Image().src = d.img);
         }
 
-        // --- 設定與假日更新邏輯 ---
+        // --- 滑動手勢功能 (Touch Events) ---
+        function setupSwipe() {
+            let touchStartX = 0;
+            let touchEndX = 0;
+            const swipeArea = document.getElementById('swipeArea');
+
+            swipeArea.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, {passive: true});
+
+            swipeArea.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, {passive: true});
+
+            function handleSwipe() {
+                // 設定滑動門檻值 (例如 50px)，避免誤觸
+                if (touchEndX < touchStartX - 50) {
+                    // 向左滑 (下一頁)
+                    changeMonth(1);
+                }
+                if (touchEndX > touchStartX + 50) {
+                    // 向右滑 (上一頁)
+                    changeMonth(-1);
+                }
+            }
+        }
+
+        // --- 設定邏輯 ---
         function applySettings() {
             const r = document.documentElement.style;
             const c = userSettings.colors;
@@ -295,18 +352,18 @@
             r.setProperty('--c-mid', c.mid);
             r.setProperty('--c-night', c.night);
             r.setProperty('--c-off', c.off);
+            r.setProperty('--c-memo', c.memo); // 套用備忘錄顏色
 
             document.getElementById('colorText').value = c.text;
             document.getElementById('colorDay').value = c.day;
             document.getElementById('colorMid').value = c.mid;
             document.getElementById('colorNight').value = c.night;
             document.getElementById('colorOff').value = c.off;
+            document.getElementById('colorMemo').value = c.memo; // 綁定輸入框
             
-            // 填入目前的假日 JSON 字串供編輯
             document.getElementById('holidayJson').value = JSON.stringify(userSettings.holidays, null, 2);
         }
 
-        // 上傳背景
         let tempBgData = null;
         document.getElementById('bgInput').addEventListener('change', (e) => {
             const f = e.target.files[0];
@@ -314,36 +371,32 @@
         });
         function resetBackground() { tempBgData = 'RESET'; alert('背景已重置'); }
 
-        // 重置假日
         function resetHolidays() {
             document.getElementById('holidayJson').value = JSON.stringify(DEFAULT_HOLIDAYS, null, 2);
             alert('已恢復預設假日，請記得按「全部套用」');
         }
 
         function saveSettings() {
-            // 1. 顏色
             userSettings.colors.text = document.getElementById('colorText').value;
             userSettings.colors.day = document.getElementById('colorDay').value;
             userSettings.colors.mid = document.getElementById('colorMid').value;
             userSettings.colors.night = document.getElementById('colorNight').value;
             userSettings.colors.off = document.getElementById('colorOff').value;
+            userSettings.colors.memo = document.getElementById('colorMemo').value; // 儲存備忘顏色
 
-            // 2. 背景
             if(tempBgData === 'RESET') userSettings.customBg = null;
             else if(tempBgData) userSettings.customBg = tempBgData;
 
-            // 3. 假日更新 (解析 JSON)
             try {
-                const newHolidays = JSON.parse(document.getElementById('holidayJson').value);
-                userSettings.holidays = newHolidays;
+                userSettings.holidays = JSON.parse(document.getElementById('holidayJson').value);
             } catch (e) {
-                alert("假日格式錯誤！請檢查 JSON 格式。將保留舊設定。");
+                alert("假日格式錯誤！");
             }
 
-            localStorage.setItem('shift_settings_v7', JSON.stringify(userSettings));
+            localStorage.setItem('shift_settings_v8', JSON.stringify(userSettings));
             applySettings();
             updateBackground();
-            renderCalendar(); // 重新渲染以套用新假日
+            renderCalendar(); 
             closeSettings();
             tempBgData = null;
         }
@@ -391,16 +444,12 @@
                 
                 const shift = getShift(dateObj);
                 const memo = memos[dStr] || '';
-                
-                // 判斷國定假日 (從 userSettings 讀取)
                 const holidayName = userSettings.holidays[dStr];
                 
-                // 判斷六日
-                const dayOfWeek = dateObj.getDay(); // 0=週日, 6=週六
+                const dayOfWeek = dateObj.getDay(); 
                 const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
 
                 const el = document.createElement('div');
-                // 加入 is-weekend class
                 el.className = `day-card ${dStr === todayStr ? 'today' : ''} ${memo ? 'has-memo' : ''} ${holidayName ? 'is-holiday' : ''} ${isWeekend ? 'is-weekend' : ''}`;
                 
                 el.onclick = () => openMemo(dStr, memo);
