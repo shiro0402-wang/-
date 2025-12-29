@@ -5,217 +5,83 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>中油輪班 - IOS玻璃版</title>
+    <title>中油輪班 - 雲端連線版</title>
     
     <link rel="icon" type="image/png" href="icon.png">
     <link rel="apple-touch-icon" href="icon.png">
     
+    <!-- 引入 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* --- 視覺核心變數 --- */
-            /* 1. App 容器底色 */
-            --glass-rgb: 20, 20, 35; 
-            --glass-opacity: 0.6;    
-            --glass-blur: 15px;      
-            --glass-border: rgba(255, 255, 255, 0.1);
-            
-            /* 2. 日期格子樣式 (新功能) */
-            --cell-bg-color: 255, 255, 255; /* 格子底色 RGB */
-            --cell-bg-opacity: 0.05;        /* 格子透明度 */
-            --cell-border-color: 255, 255, 255; /* 邊框顏色 RGB */
-            --cell-border-opacity: 0.15;        /* 邊框透明度 */
-            
-            /* 3. 文字與班別顏色 */
-            --text-main: #f0f0f0;
-            --c-day:   #6b93d6;
-            --c-mid:   #e09f6c;
-            --c-night: #a67bc1;
-            --c-off:   #d66b6b;
-            --holiday-red: #ff4d4d;
-            --c-memo:  #ff4d4d;
-            --text-sub: rgba(255, 255, 255, 0.6);
+            /* 視覺變數 */
+            --glass-rgb: 20, 20, 35; --glass-opacity: 0.6; --glass-blur: 15px; --glass-border: rgba(255, 255, 255, 0.1);
+            --cell-bg-color: 255, 255, 255; --cell-bg-opacity: 0.05; --cell-border-color: 255, 255, 255; --cell-border-opacity: 0.15;
+            /* 顏色變數 */
+            --text-main: #f0f0f0; --c-day: #6b93d6; --c-mid: #e09f6c; --c-night: #a67bc1; --c-off: #d66b6b; --holiday-red: #ff4d4d; --c-memo: #ff4d4d; --text-sub: rgba(255, 255, 255, 0.6);
+            --sync-status-color: #444; 
         }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; /* iOS 優先字體 */
-            margin: 0; padding: 0;
-            color: var(--text-main);
-            height: 100vh;
-            overflow: hidden; 
-            background-color: #1a1a2e;
-            background-size: cover;
-            background-position: center;
-            transition: background-image 0.6s ease-in-out;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            user-select: none; 
-            -webkit-user-select: none;
-        }
-
-        .bg-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            /* 讓背景稍微暗一點，凸顯玻璃效果 */
-            background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%);
-            z-index: 0; pointer-events: none;
-        }
-
-        .app-container {
-            position: relative; z-index: 1; height: 100%;
-            display: flex; flex-direction: column;
-            max-width: 500px; margin: 0 auto;
-            
-            /* App 容器背景 */
-            background: rgba(var(--glass-rgb), var(--glass-opacity));
-            backdrop-filter: blur(var(--glass-blur));
-            -webkit-backdrop-filter: blur(var(--glass-blur));
-            
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-            border-left: 1px solid var(--glass-border);
-            border-right: 1px solid var(--glass-border);
-            transition: background 0.2s, backdrop-filter 0.2s; 
-        }
-
-        header {
-            padding: 15px 20px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--glass-border); flex-shrink: 0;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif; margin: 0; padding: 0; color: var(--text-main); height: 100vh; overflow: hidden; background-color: #1a1a2e; background-size: cover; background-position: center; transition: background-image 0.6s ease-in-out; padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); user-select: none; -webkit-user-select: none; }
+        .bg-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.5) 100%); z-index: 0; pointer-events: none; }
+        .app-container { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; max-width: 500px; margin: 0 auto; background: rgba(var(--glass-rgb), var(--glass-opacity)); backdrop-filter: blur(var(--glass-blur)); -webkit-backdrop-filter: blur(var(--glass-blur)); box-shadow: 0 0 50px rgba(0,0,0,0.5); border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border); transition: background 0.2s, backdrop-filter 0.2s; }
         
+        header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--glass-border); flex-shrink: 0; }
         .header-info h1 { margin: 0; font-size: 1.4rem; font-family: 'Cinzel', serif; text-shadow: 0 2px 10px rgba(0,0,0,0.3); color: var(--text-main); }
         .header-info p { margin: 2px 0 0 0; font-size: 0.75rem; color: var(--text-sub); }
         .header-controls { display: flex; gap: 10px; align-items: center; }
-
-        .nav-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            color: var(--text-main); width: 38px; height: 38px; border-radius: 50%;
-            cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;
-        }
+        .nav-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); color: var(--text-main); width: 38px; height: 38px; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
         .nav-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
         .settings-btn { font-size: 1.2rem; border: none; background: transparent; }
+        
+        .sync-indicator { width: 8px; height: 8px; border-radius: 50%; background: var(--sync-status-color); margin-left: 5px; display: inline-block; box-shadow: 0 0 5px var(--sync-status-color); transition: background 0.3s;}
 
-        .calendar-body { 
-            flex: 1; padding: 10px; overflow-y: hidden; 
-            display: flex; flex-direction: column; 
-            touch-action: pan-y; 
-        }
-
-        .week-header {
-            display: grid; grid-template-columns: repeat(7, 1fr);
-            text-align: center; margin-bottom: 8px; font-size: 0.75rem;
-            color: var(--text-sub); letter-spacing: 1px;
-        }
-
-        /* --- 格子樣式 (iOS 風格) --- */
+        .calendar-body { flex: 1; padding: 10px; overflow-y: hidden; display: flex; flex-direction: column; touch-action: pan-y; }
+        .week-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px; font-size: 0.75rem; color: var(--text-sub); letter-spacing: 1px; }
         .grid-container { flex: 1; position: relative; overflow: hidden; }
-        .grid { 
-            display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; /* 加大間距更有質感 */
-            width: 100%;
-            transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease-out; /* iOS 緩動曲線 */
-        }
-        .slide-out-left { transform: translateX(-30px); opacity: 0; }
-        .slide-in-right { animation: inRight 0.3s forwards; }
-        .slide-out-right { transform: translateX(30px); opacity: 0; }
-        .slide-in-left { animation: inLeft 0.3s forwards; }
-        @keyframes inRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes inLeft { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        .day-card {
-            /* ★ 這裡使用我們定義的新變數 ★ */
-            background: rgba(var(--cell-bg-color), var(--cell-bg-opacity));
-            border: 1px solid rgba(var(--cell-border-color), var(--cell-border-opacity));
-            
-            border-radius: 12px; /* 更圓潤的導角 (iOS 風格) */
-            height: 85px; 
-            overflow: hidden; display: flex; flex-direction: column;
-            align-items: center; padding: 6px 2px; position: relative;
-            cursor: pointer; box-sizing: border-box;
-            
-            /* 添加一點點陰影增加層次 */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            transition: transform 0.1s;
-        }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; width: 100%; transition: transform 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease-out; }
+        .slide-out-left { transform: translateX(-30px); opacity: 0; } .slide-in-right { animation: inRight 0.3s forwards; } .slide-out-right { transform: translateX(30px); opacity: 0; } .slide-in-left { animation: inLeft 0.3s forwards; }
+        @keyframes inRight { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } } @keyframes inLeft { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .day-card { background: rgba(var(--cell-bg-color), var(--cell-bg-opacity)); border: 1px solid rgba(var(--cell-border-color), var(--cell-border-opacity)); border-radius: 12px; height: 85px; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 6px 2px; position: relative; cursor: pointer; box-sizing: border-box; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: transform 0.1s; }
         .day-card:active { transform: scale(0.96); }
-
-        .day-card.today { 
-            border: 1.5px solid var(--c-day); 
-            background: rgba(var(--cell-bg-color), 0.2); /* 今天稍微亮一點 */
-            box-shadow: 0 0 15px rgba(var(--cell-bg-color), 0.2);
-        }
-
+        .day-card.today { border: 1.5px solid var(--c-day); background: rgba(var(--cell-bg-color), 0.2); box-shadow: 0 0 15px rgba(var(--cell-bg-color), 0.2); }
         .day-num { font-family: 'Cinzel', serif; font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
-        
-        .is-holiday .day-num, .is-weekend .day-num {
-            color: var(--holiday-red) !important;
-            text-shadow: 0 0 10px rgba(255, 77, 77, 0.4);
-        }
-
-        .holiday-name {
-            font-size: 0.6rem; color: var(--holiday-red);
-            margin-top: -4px; margin-bottom: 2px; font-weight: bold; opacity: 0.9;
-        }
-
+        .is-holiday .day-num, .is-weekend .day-num { color: var(--holiday-red) !important; text-shadow: 0 0 10px rgba(255, 77, 77, 0.4); }
+        .holiday-name { font-size: 0.6rem; color: var(--holiday-red); margin-top: -4px; margin-bottom: 2px; font-weight: bold; opacity: 0.9; }
         .shift-text { font-size: 0.85rem; font-weight: 500; margin-bottom: auto; }
-        .t-早 { color: var(--c-day); }
-        .t-中 { color: var(--c-mid); }
-        .t-晚 { color: var(--c-night); }
-        .t-休 { color: var(--c-off); }
-
-        .memo-dot {
-            position: absolute; top: 6px; right: 6px;
-            width: 5px; height: 5px; background: var(--text-main);
-            border-radius: 50%; display: none; box-shadow: 0 0 4px var(--text-main);
-        }
+        .t-早 { color: var(--c-day); } .t-中 { color: var(--c-mid); } .t-晚 { color: var(--c-night); } .t-休 { color: var(--c-off); }
+        .memo-dot { position: absolute; top: 6px; right: 6px; width: 5px; height: 5px; background: var(--text-main); border-radius: 50%; display: none; box-shadow: 0 0 4px var(--text-main); }
         .has-memo .memo-dot { display: block; }
+        .memo-preview { font-size: 0.65rem; color: var(--c-memo); font-weight: bold; width: 95%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; height: 14px; opacity: 1; }
         
-        .memo-preview { 
-            font-size: 0.65rem; color: var(--c-memo); font-weight: bold;
-            width: 95%; text-align: center; white-space: nowrap; 
-            overflow: hidden; text-overflow: ellipsis; margin-top: 4px; 
-            height: 14px; opacity: 1; 
-        }
-
-        .footer-controls { padding: 10px; border-top: 1px solid var(--glass-border); text-align: center; font-size: 0.7rem; color: var(--text-sub); }
+        .footer-controls { padding: 10px; border-top: 1px solid var(--glass-border); text-align: center; font-size: 0.7rem; color: var(--text-sub); display: flex; justify-content: center; align-items: center;}
 
         /* Modal */
-        .modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 100; /* 背景暗一點，強調彈窗 */
-            display: flex; justify-content: center; align-items: center;
-            opacity: 0; pointer-events: none; transition: 0.3s; 
-            backdrop-filter: blur(8px);
-        }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: 0.3s; backdrop-filter: blur(8px); }
         .modal.show { opacity: 1; pointer-events: auto; }
-        .modal-box {
-            background: rgba(30, 30, 45, 0.9); border: 1px solid rgba(255,255,255,0.1);
-            width: 85%; max-width: 340px; max-height: 85vh; overflow-y: auto;
-            padding: 20px; border-radius: 20px; 
-            transform: scale(0.9); transition: 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-        }
+        .modal-box { background: rgba(30, 30, 45, 0.95); border: 1px solid rgba(255,255,255,0.1); width: 85%; max-width: 340px; max-height: 85vh; overflow-y: auto; padding: 20px; border-radius: 20px; transform: scale(0.9); transition: 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
         .modal.show .modal-box { transform: scale(1); }
         .modal h3 { margin-top: 0; color: var(--text-main); font-family: 'Cinzel', serif; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;}
-
-        textarea {
-            width: 100%; height: 100px; background: rgba(0,0,0,0.2);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; padding: 10px;
-            font-size: 1rem; box-sizing: border-box; resize: none; margin: 15px 0;
-            font-family: 'Roboto', sans-serif;
-        }
+        textarea { width: 100%; height: 100px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; padding: 10px; font-size: 1rem; box-sizing: border-box; resize: none; margin: 15px 0; font-family: 'Roboto', sans-serif; }
         .modal-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px; }
         .m-btn { padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold;}
         .btn-close { background: rgba(255,255,255,0.1); color: #ccc; }
         .btn-save { background: var(--c-day); color: #000; }
-
-        /* Settings Styles */
+        
         .setting-section { margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; }
         .setting-label { font-size: 0.9rem; margin-bottom: 8px; display: block; color: var(--text-sub); font-weight: bold;}
         .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; background: rgba(255,255,255,0.03); padding: 8px; border-radius: 8px;}
         input[type="color"] { border: none; width: 40px; height: 30px; cursor: pointer; background: none; }
         .json-area { width: 100%; height: 80px; font-size: 0.7rem; font-family: monospace; color: #aaa; background: #111; border: 1px solid #333; }
-        
         input[type=range] { width: 100%; margin-top: 5px; cursor: pointer; accent-color: var(--c-day); }
         .range-desc { display:flex; justify-content:space-between; font-size:0.7rem; color:#aaa; margin-bottom: 5px;}
+        .month-bg-control { display: flex; gap: 10px; align-items: center; margin-top:5px; }
+        .month-select { flex: 1; padding: 5px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        .sync-input { width: 100%; background: #333; color: #00ff9d; border: 1px solid #555; padding: 10px; border-radius: 8px; font-family: monospace; letter-spacing: 2px; text-align: center; font-size: 1.1rem; box-sizing: border-box;}
     </style>
 </head>
 <body>
@@ -247,7 +113,9 @@
                 <div class="grid" id="calendarGrid"></div>
             </div>
         </div>
-        <div class="footer-controls">中油輪班系統 v11.0 | IOS玻璃版</div>
+        <div class="footer-controls">
+            雲端連線版 <div class="sync-indicator" id="syncLight"></div>
+        </div>
     </div>
 
     <!-- Memos Modal -->
@@ -257,7 +125,7 @@
             <textarea id="memoText" placeholder="在此輸入備忘錄..."></textarea>
             <div class="modal-btns">
                 <button class="m-btn btn-close" onclick="closeMemo()">取消</button>
-                <button class="m-btn btn-save" onclick="saveMemo()">儲存</button>
+                <button class="m-btn btn-save" onclick="saveMemo()">雲端儲存</button>
             </div>
         </div>
     </div>
@@ -268,354 +136,173 @@
             <h3>系統設定</h3>
             
             <div class="setting-section">
-                <span class="setting-label">介面底色 (App Base)</span>
-                <div class="color-row">
-                    <span>底色</span><input type="color" id="glassBaseColor" value="#141423" oninput="updateGlassBase(this.value)">
-                </div>
-                <div class="range-desc"><span>透明度: 透明 <-> 深色</span></div>
-                <input type="range" id="opacitySlider" min="0.1" max="0.95" step="0.05" value="0.6" oninput="updateGlassStyle()">
-                
-                <div class="range-desc" style="margin-top:10px;"><span>模糊度: 清晰 <-> 磨砂</span></div>
-                <input type="range" id="blurSlider" min="0" max="30" step="1" value="15" oninput="updateGlassStyle()">
-            </div>
-
-            <!-- 新增：格子樣式調整區 -->
-            <div class="setting-section">
-                <span class="setting-label">格子樣式 (Cell Style)</span>
-                
-                <div class="color-row">
-                    <span>格子底色</span><input type="color" id="cellBgColor" value="#ffffff" oninput="updateCellStyle()">
-                </div>
-                <div class="range-desc"><span>底色透明度</span></div>
-                <input type="range" id="cellBgOpacity" min="0" max="0.5" step="0.01" value="0.05" oninput="updateCellStyle()">
-
-                <div class="color-row" style="margin-top:10px;">
-                    <span>邊框顏色</span><input type="color" id="cellBorderColor" value="#ffffff" oninput="updateCellStyle()">
-                </div>
-                <div class="range-desc"><span>邊框透明度</span></div>
-                <input type="range" id="cellBorderOpacity" min="0" max="1" step="0.05" value="0.15" oninput="updateCellStyle()">
+                <span class="setting-label" style="color:#00ff9d;">☁️ 雲端共用群組 (Sync Group)</span>
+                <p style="font-size:0.7rem; color:#aaa; margin:0 0 5px;">輸入相同的「群組密碼」，兩人即可共用備忘錄。</p>
+                <input type="text" id="syncIdInput" class="sync-input" placeholder="例如: LOVE2026">
+                <button class="m-btn btn-save" onclick="connectToSync()" style="width:100%; margin-top:8px;">連線 / 切換群組</button>
+                <p id="syncStatusText" style="font-size:0.7rem; color:#888; text-align:center; margin-top:5px;">目前狀態: 單機模式</p>
             </div>
 
             <div class="setting-section">
-                <span class="setting-label">自訂背景圖片</span>
-                <input type="file" id="bgInput" accept="image/*" style="font-size:0.8rem; color:#aaa;">
-                <button class="m-btn btn-close" onclick="resetBackground()" style="margin-top:5px; font-size:0.7rem;">恢復預設風景</button>
-            </div>
-
-            <div class="setting-section">
+                <span class="setting-label">月份背景 & 外觀</span>
+                <div class="month-bg-control">
+                    <select id="bgMonthSelect" class="month-select" onchange="updateMonthInputStatus()"><option value="0">1月</option><option value="1">2月</option><option value="2">3月</option><option value="3">4月</option><option value="4">5月</option><option value="5">6月</option><option value="6">7月</option><option value="7">8月</option><option value="8">9月</option><option value="9">10月</option><option value="10">11月</option><option value="11">12月</option></select>
+                    <button class="m-btn btn-close" onclick="clearMonthBg()" style="font-size:0.7rem; width:80px;">清除</button>
+                </div>
+                <input type="file" id="monthBgInput" accept="image/*" style="font-size:0.8rem; color:#aaa; margin-top:8px;">
+                <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
                 <span class="setting-label">主題配色</span>
-                <div class="color-row"><span>文字顏色</span><input type="color" id="colorText"></div>
-                <div class="color-row"><span>早班顏色</span><input type="color" id="colorDay"></div>
-                <div class="color-row"><span>中班顏色</span><input type="color" id="colorMid"></div>
-                <div class="color-row"><span>晚班顏色</span><input type="color" id="colorNight"></div>
-                <div class="color-row"><span>休假顏色</span><input type="color" id="colorOff"></div>
-                <div class="color-row"><span>備忘錄顏色</span><input type="color" id="colorMemo"></div>
-            </div>
-
-            <div class="setting-section" style="border:none;">
-                <span class="setting-label">假日資料庫</span>
-                <textarea id="holidayJson" class="json-area"></textarea>
-                <button class="m-btn btn-close" onclick="resetHolidays()" style="font-size:0.7rem; margin-top:5px;">重置回預設 2026</button>
+                <div style="display:flex; justify-content:space-between;">
+                   <input type="color" id="colorDay"> <input type="color" id="colorMid"> <input type="color" id="colorNight"> <input type="color" id="colorOff"> <input type="color" id="colorMemo">
+                </div>
             </div>
 
             <div class="modal-btns">
-                <button class="m-btn btn-close" onclick="closeSettings()">取消</button>
-                <button class="m-btn btn-save" onclick="saveSettings()">全部套用</button>
+                <button class="m-btn btn-close" onclick="closeSettings()">關閉</button>
+                <button class="m-btn btn-save" onclick="saveSettings()">儲存外觀</button>
             </div>
         </div>
     </div>
 
     <script>
+        // ★ 已填入你的專屬 Firebase 設定 ★
+        const firebaseConfig = {
+          apiKey: "AIzaSyCyARVsApEGGFfblnqxrrcU5DBn_PAoFQY",
+          authDomain: "cpc-shift-cloud.firebaseapp.com",
+          databaseURL: "https://cpc-shift-cloud-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "cpc-shift-cloud",
+          storageBucket: "cpc-shift-cloud.firebasestorage.app",
+          messagingSenderId: "696025042396",
+          appId: "1:696025042396:web:c7c0e0daf54e9517471319",
+          measurementId: "G-ZEF6YSDCNK"
+        };
+
+        let db = null;
+        let currentSyncId = localStorage.getItem('shift_sync_id') || ""; 
+        
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            console.log("Firebase initialized successfully");
+        } catch(e) { console.error("Firebase Init Error", e); }
+
         const BASE_DATE = new Date('2026-01-01');
         const SHIFT_CYCLE = ['中', '中', '休', '晚', '晚', '休', '早', '早'];
 
-        const DEFAULT_HOLIDAYS = {
-            '2026-01-01': '元旦', '2026-02-16': '小年夜', '2026-02-17': '除夕', '2026-02-18': '春節',
-            '2026-02-19': '初二', '2026-02-20': '初三', '2026-02-28': '228紀念', '2026-02-27': '228連假',
-            '2026-04-03': '兒童節', '2026-04-04': '清明節', '2026-04-05': '連假', '2026-04-06': '補假',
-            '2026-05-01': '勞動節', '2026-06-19': '端午節', '2026-09-25': '中秋節', '2026-10-10': '國慶日',
-            '2026-10-09': '國慶連假'
-        };
-
+        const DEFAULT_HOLIDAYS = { '2026-01-01': '元旦', '2026-02-18': '春節', '2026-06-19': '端午節', '2026-09-25': '中秋節', '2026-10-10': '國慶日' };
         const MONTH_DATA = [
-            { img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1920&fit=crop', name: 'TOKYO, JAPAN' },
-            { img: 'https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?q=80&w=1920&fit=crop', name: 'PARIS, FRANCE' },
-            { img: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?q=80&w=1920&fit=crop', name: 'MT. FUJI' },
-            { img: 'https://images.unsplash.com/photo-1605130284535-11dd9eedc58a?q=80&w=1920&fit=crop', name: 'NEW YORK, USA' },
-            { img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1920&fit=crop', name: 'ROME, ITALY' },
-            { img: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=1920&fit=crop', name: 'AGRA, INDIA' },
-            { img: 'https://images.unsplash.com/photo-1624138784180-40c4efe51fa2?q=80&w=1920&fit=crop', name: 'SYDNEY, AU' },
-            { img: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1920&fit=crop', name: 'CAIRO, EGYPT' },
-            { img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=1920&fit=crop', name: 'LONDON, UK' },
-            { img: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?q=80&w=1920&fit=crop', name: 'BEIJING, CHINA' },
-            { img: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1920&fit=crop', name: 'SAN FRANCISCO' },
-            { img: 'https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=1920&fit=crop', name: 'TAIPEI, TAIWAN' }
+            { img: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1920', name: 'TOKYO' },
+            { img: 'https://images.unsplash.com/photo-1499856871940-a09627c6dcf6?q=80&w=1920', name: 'PARIS' },
+            { img: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?q=80&w=1920', name: 'MT. FUJI' },
+            { img: 'https://images.unsplash.com/photo-1605130284535-11dd9eedc58a?q=80&w=1920', name: 'NEW YORK' },
+            { img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1920', name: 'ROME' },
+            { img: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?q=80&w=1920', name: 'INDIA' },
+            { img: 'https://images.unsplash.com/photo-1624138784180-40c4efe51fa2?q=80&w=1920', name: 'SYDNEY' },
+            { img: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1920', name: 'EGYPT' },
+            { img: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=1920', name: 'LONDON' },
+            { img: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?q=80&w=1920', name: 'BEIJING' },
+            { img: 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?q=80&w=1920', name: 'SF' },
+            { img: 'https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=1920', name: 'TAIPEI' }
         ];
 
         const DEFAULT_COLORS = { text: '#f0f0f0', day: '#6b93d6', mid: '#e09f6c', night: '#a67bc1', off: '#d66b6b', memo: '#ff4d4d' };
         
-        // 預設視覺參數 (iOS 風格)
-        const DEFAULT_VISUAL = {
-            opacity: 0.6, blur: 15, baseColor: '#141423',
-            cellBg: '#ffffff', cellBgOp: 0.05,
-            cellBorder: '#ffffff', cellBorderOp: 0.15
-        };
-
         let currentYear = new Date().getFullYear();
         let currentMonth = new Date().getMonth();
         let currentEditDate = '';
         let isAnimating = false;
-
-        let userSettings = JSON.parse(localStorage.getItem('shift_settings_v11')) || {
-            customBg: null,
-            visual: { ...DEFAULT_VISUAL },
-            colors: { ...DEFAULT_COLORS },
-            holidays: DEFAULT_HOLIDAYS
-        };
         
-        // 確保變數存在
-        userSettings.visual = { ...DEFAULT_VISUAL, ...userSettings.visual };
-        userSettings.colors = { ...DEFAULT_COLORS, ...userSettings.colors };
-
+        let localMemos = JSON.parse(localStorage.getItem('shift_memos_v7')) || {};
+        let userSettings = JSON.parse(localStorage.getItem('shift_settings_v13')) || { monthlyBgs: {}, visual: { opacity: 0.6, blur: 15, baseColor: '#141423' }, colors: { ...DEFAULT_COLORS }, holidays: DEFAULT_HOLIDAYS };
+        
         function init() {
-            applySettings();
-            updateBackground();
-            renderCalendar();
-            setupSwipe(); 
+            applySettings(); updateBackground(); renderCalendar(); setupSwipe(); 
             MONTH_DATA.forEach(d => new Image().src = d.img);
+            document.getElementById('syncIdInput').value = currentSyncId;
+            if(currentSyncId && db) startFirebaseListener(currentSyncId);
         }
 
-        function hexToRgb(hex) {
-            let r=0, g=0, b=0;
-            if(hex.length === 4) { r = parseInt(hex[1]+hex[1],16); g = parseInt(hex[2]+hex[2],16); b = parseInt(hex[3]+hex[3],16); } 
-            else if(hex.length === 7) { r = parseInt(hex.substring(1,3),16); g = parseInt(hex.substring(3,5),16); b = parseInt(hex.substring(5,7),16); }
-            return `${r}, ${g}, ${b}`;
-        }
-
-        function setupSwipe() {
-            let touchStartX = 0; let touchEndX = 0;
-            const swipeArea = document.getElementById('swipeArea');
-            swipeArea.addEventListener('touchstart', (e) => touchStartX = e.changedTouches[0].screenX, {passive: true});
-            swipeArea.addEventListener('touchend', (e) => {
-                touchEndX = e.changedTouches[0].screenX;
-                if(touchEndX < touchStartX - 50) changeMonth(1);
-                if(touchEndX > touchStartX + 50) changeMonth(-1);
-            }, {passive: true});
-        }
-
-        // --- 即時預覽更新 ---
-        function updateGlassStyle() {
-            const op = document.getElementById('opacitySlider').value;
-            const bl = document.getElementById('blurSlider').value;
-            document.documentElement.style.setProperty('--glass-opacity', op);
-            document.documentElement.style.setProperty('--glass-blur', bl + 'px');
-        }
-        function updateGlassBase(hex) {
-            document.documentElement.style.setProperty('--glass-rgb', hexToRgb(hex));
-        }
-        function updateCellStyle() {
-            const bgHex = document.getElementById('cellBgColor').value;
-            const bgOp = document.getElementById('cellBgOpacity').value;
-            const borderHex = document.getElementById('cellBorderColor').value;
-            const borderOp = document.getElementById('cellBorderOpacity').value;
-
-            const r = document.documentElement.style;
-            r.setProperty('--cell-bg-color', hexToRgb(bgHex));
-            r.setProperty('--cell-bg-opacity', bgOp);
-            r.setProperty('--cell-border-color', hexToRgb(borderHex));
-            r.setProperty('--cell-border-opacity', borderOp);
-        }
-
-        function applySettings() {
-            const r = document.documentElement.style;
-            const c = userSettings.colors;
-            const v = userSettings.visual;
-
-            r.setProperty('--text-main', c.text);
-            r.setProperty('--c-day', c.day);
-            r.setProperty('--c-mid', c.mid);
-            r.setProperty('--c-night', c.night);
-            r.setProperty('--c-off', c.off);
-            r.setProperty('--c-memo', c.memo);
-            
-            r.setProperty('--glass-rgb', hexToRgb(v.baseColor));
-            r.setProperty('--glass-opacity', v.opacity);
-            r.setProperty('--glass-blur', v.blur + 'px');
-            
-            // 格子樣式
-            r.setProperty('--cell-bg-color', hexToRgb(v.cellBg));
-            r.setProperty('--cell-bg-opacity', v.cellBgOp);
-            r.setProperty('--cell-border-color', hexToRgb(v.cellBorder));
-            r.setProperty('--cell-border-opacity', v.cellBorderOp);
-
-            // 更新 UI 控件
-            document.getElementById('colorText').value = c.text;
-            document.getElementById('colorDay').value = c.day;
-            document.getElementById('colorMid').value = c.mid;
-            document.getElementById('colorNight').value = c.night;
-            document.getElementById('colorOff').value = c.off;
-            document.getElementById('colorMemo').value = c.memo;
-            
-            document.getElementById('glassBaseColor').value = v.baseColor;
-            document.getElementById('opacitySlider').value = v.opacity;
-            document.getElementById('blurSlider').value = v.blur;
-            
-            document.getElementById('cellBgColor').value = v.cellBg;
-            document.getElementById('cellBgOpacity').value = v.cellBgOp;
-            document.getElementById('cellBorderColor').value = v.cellBorder;
-            document.getElementById('cellBorderOpacity').value = v.cellBorderOp;
-            
-            document.getElementById('holidayJson').value = JSON.stringify(userSettings.holidays, null, 2);
-        }
-
-        let tempBgData = null;
-        document.getElementById('bgInput').addEventListener('change', (e) => {
-            const f = e.target.files[0];
-            if(f){ const reader = new FileReader(); reader.onload=(evt)=>tempBgData=evt.target.result; reader.readAsDataURL(f); }
-        });
-        function resetBackground() { tempBgData = 'RESET'; alert('背景已重置'); }
-        function resetHolidays() { document.getElementById('holidayJson').value = JSON.stringify(DEFAULT_HOLIDAYS, null, 2); }
-
-        function saveSettings() {
-            const u = userSettings;
-            u.colors.text = document.getElementById('colorText').value;
-            u.colors.day = document.getElementById('colorDay').value;
-            u.colors.mid = document.getElementById('colorMid').value;
-            u.colors.night = document.getElementById('colorNight').value;
-            u.colors.off = document.getElementById('colorOff').value;
-            u.colors.memo = document.getElementById('colorMemo').value;
-            
-            u.visual.baseColor = document.getElementById('glassBaseColor').value;
-            u.visual.opacity = document.getElementById('opacitySlider').value;
-            u.visual.blur = document.getElementById('blurSlider').value;
-            
-            // 儲存格子樣式
-            u.visual.cellBg = document.getElementById('cellBgColor').value;
-            u.visual.cellBgOp = document.getElementById('cellBgOpacity').value;
-            u.visual.cellBorder = document.getElementById('cellBorderColor').value;
-            u.visual.cellBorderOp = document.getElementById('cellBorderOpacity').value;
-
-            if(tempBgData === 'RESET') u.customBg = null;
-            else if(tempBgData) u.customBg = tempBgData;
-
-            try { u.holidays = JSON.parse(document.getElementById('holidayJson').value); } 
-            catch (e) { alert("假日格式錯誤！"); }
-
-            localStorage.setItem('shift_settings_v11', JSON.stringify(u));
-            applySettings();
-            updateBackground();
-            renderCalendar(); 
-            closeSettings();
-            tempBgData = null;
-        }
-
-        function updateBackground() {
-            const loc = document.getElementById('locationText');
-            if(userSettings.customBg) {
-                document.body.style.backgroundImage = `url('${userSettings.customBg}')`;
-                loc.innerText = "CUSTOM VIEW";
-            } else {
-                const idx = (currentMonth % 12 + 12) % 12;
-                document.body.style.backgroundImage = `url('${MONTH_DATA[idx].img}')`;
-                loc.innerText = MONTH_DATA[idx].name;
+        function connectToSync() {
+            const id = document.getElementById('syncIdInput').value.trim();
+            if (!id) { 
+                localStorage.removeItem('shift_sync_id'); currentSyncId = "";
+                alert("已斷開連線，切回單機模式。"); renderSyncStatus(false); return;
             }
+            currentSyncId = id; localStorage.setItem('shift_sync_id', id);
+            startFirebaseListener(id);
+            alert(`✅ 已連線至群組：${id}\n現在雙方修改備忘錄會即時同步！`);
         }
 
-        function getShift(date) {
-            const oneDay = 86400000;
-            const d1 = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const d2 = new Date(BASE_DATE.getFullYear(), BASE_DATE.getMonth(), BASE_DATE.getDate());
-            const diff = Math.round((d1 - d2) / oneDay);
-            let i = diff % SHIFT_CYCLE.length;
-            if(i < 0) i += SHIFT_CYCLE.length;
-            return SHIFT_CYCLE[i];
+        function startFirebaseListener(roomId) {
+            db.ref('schedules/' + roomId).on('value', (snapshot) => {
+                const cloudData = snapshot.val();
+                if(cloudData) localMemos = cloudData; else localMemos = {};
+                renderCalendar(); renderSyncStatus(true);
+            });
         }
 
-        function renderCalendar() {
-            const grid = document.getElementById('calendarGrid');
-            document.getElementById('monthDisplay').innerText = `${currentYear}.${String(currentMonth+1).padStart(2,'0')}`;
-            grid.innerHTML = ''; 
-
-            const firstDay = new Date(currentYear, currentMonth, 1);
-            const lastDay = new Date(currentYear, currentMonth+1, 0);
-            const daysCount = lastDay.getDate();
-            const startWeek = firstDay.getDay();
-            const todayStr = new Date().toISOString().split('T')[0];
-            const memos = JSON.parse(localStorage.getItem('shift_memos_v7')) || {};
-
-            for(let i=0; i<startWeek; i++) grid.appendChild(document.createElement('div'));
-
-            for(let d=1; d<=daysCount; d++) {
-                const dateObj = new Date(currentYear, currentMonth, d);
-                const dStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                
-                const shift = getShift(dateObj);
-                const memo = memos[dStr] || '';
-                const holidayName = userSettings.holidays[dStr];
-                const dayOfWeek = dateObj.getDay(); 
-                const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-
-                const el = document.createElement('div');
-                el.className = `day-card ${dStr === todayStr ? 'today' : ''} ${memo ? 'has-memo' : ''} ${holidayName ? 'is-holiday' : ''} ${isWeekend ? 'is-weekend' : ''}`;
-                el.onclick = () => openMemo(dStr, memo);
-
-                const hHtml = holidayName ? `<div class="holiday-name">${holidayName}</div>` : '';
-                el.innerHTML = `
-                    <div class="day-num">${d}</div>
-                    ${hHtml}
-                    <div class="memo-dot"></div>
-                    <div class="shift-text t-${shift}">${shift}</div>
-                    <div class="memo-preview">${memo.split('\n')[0]}</div>
-                `;
-                grid.appendChild(el);
-            }
+        function renderSyncStatus(isOnline) {
+            const light = document.getElementById('syncLight'); const text = document.getElementById('syncStatusText');
+            if(isOnline) { document.documentElement.style.setProperty('--sync-status-color', '#00ff9d'); text.innerText = `● 線上同步中 (${currentSyncId})`; text.style.color = '#00ff9d'; }
+            else { document.documentElement.style.setProperty('--sync-status-color', '#444'); text.innerText = "目前狀態: 單機模式"; text.style.color = '#888'; }
         }
 
-        function changeMonth(offset) {
-            if (isAnimating) return;
-            isAnimating = true;
-            const grid = document.getElementById('calendarGrid');
-            const exitClass = offset > 0 ? 'slide-out-left' : 'slide-out-right';
-            const enterClass = offset > 0 ? 'slide-in-right' : 'slide-in-left';
-
-            grid.classList.add(exitClass);
-            setTimeout(() => {
-                currentMonth += offset;
-                if(currentMonth > 11) { currentMonth = 0; currentYear++; }
-                if(currentMonth < 0) { currentMonth = 11; currentYear--; }
-                updateBackground(); renderCalendar();
-                grid.classList.remove(exitClass);
-                grid.classList.add(enterClass);
-                setTimeout(() => { grid.classList.remove(enterClass); isAnimating = false; }, 300);
-            }, 300);
-        }
-
-        const memoModal = document.getElementById('memoModal');
-        const settingsModal = document.getElementById('settingsModal');
-        
-        function openMemo(d, t) {
-            currentEditDate = d;
-            let title = d;
-            if(userSettings.holidays[d]) title += ` (${userSettings.holidays[d]})`;
-            document.getElementById('modalDate').innerText = title;
-            document.getElementById('memoText').value = t;
-            memoModal.classList.add('show');
-            document.getElementById('memoText').focus();
-        }
-        function closeMemo() { memoModal.classList.remove('show'); }
         function saveMemo() {
             const v = document.getElementById('memoText').value.trim();
-            const m = JSON.parse(localStorage.getItem('shift_memos_v7')) || {};
-            if(v) m[currentEditDate] = v; else delete m[currentEditDate];
-            localStorage.setItem('shift_memos_v7', JSON.stringify(m));
+            if(v) localMemos[currentEditDate] = v; else delete localMemos[currentEditDate];
+            if(currentSyncId && db) db.ref('schedules/' + currentSyncId).set(localMemos).catch(e => alert("雲端儲存失敗：" + e.message));
+            else localStorage.setItem('shift_memos_v7', JSON.stringify(localMemos));
             renderCalendar(); closeMemo();
         }
-        function openSettings() { settingsModal.classList.add('show'); }
-        function closeSettings() { applySettings(); settingsModal.classList.remove('show'); }
-        window.onclick = (e) => {
-            if(e.target === memoModal) closeMemo();
-            if(e.target === settingsModal) closeSettings();
+
+        function compressImage(file, cb) { const r = new FileReader(); r.readAsDataURL(file); r.onload = e => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const w = Math.min(i.width, 1080); const h = i.height * (w/i.width); c.width=w; c.height=h; c.getContext('2d').drawImage(i,0,0,w,h); cb(c.toDataURL('image/jpeg', 0.6)); }}; }
+        function hexToRgb(h){ let r=0,g=0,b=0; if(h.length==4){r=parseInt(h[1]+h[1],16);g=parseInt(h[2]+h[2],16);b=parseInt(h[3]+h[3],16);}else{r=parseInt(h.substring(1,3),16);g=parseInt(h.substring(3,5),16);b=parseInt(h.substring(5,7),16);} return `${r},${g},${b}`; }
+        
+        function setupSwipe() { let sx=0, ex=0; const a=document.getElementById('swipeArea'); a.addEventListener('touchstart',e=>sx=e.changedTouches[0].screenX,{passive:true}); a.addEventListener('touchend',e=>{ ex=e.changedTouches[0].screenX; if(ex<sx-50)changeMonth(1); if(ex>sx+50)changeMonth(-1); },{passive:true}); }
+
+        function applySettings() {
+            const r=document.documentElement.style, c=userSettings.colors, v=userSettings.visual;
+            r.setProperty('--text-main',c.text); r.setProperty('--c-day',c.day); r.setProperty('--c-mid',c.mid); r.setProperty('--c-night',c.night); r.setProperty('--c-off',c.off); r.setProperty('--c-memo',c.memo);
+            r.setProperty('--glass-rgb',hexToRgb(v.baseColor)); r.setProperty('--glass-opacity',v.opacity); r.setProperty('--glass-blur',v.blur+'px');
+            document.getElementById('colorDay').value=c.day; document.getElementById('colorMid').value=c.mid; document.getElementById('colorNight').value=c.night; document.getElementById('colorOff').value=c.off; document.getElementById('colorMemo').value=c.memo;
+            updateMonthInputStatus();
         }
+
+        let tempMonthBg = null;
+        document.getElementById('monthBgInput').addEventListener('change', e => { if(e.target.files[0]) compressImage(e.target.files[0], d=>tempMonthBg=d); });
+        function updateMonthInputStatus() { const m = document.getElementById('bgMonthSelect').value; const btn = document.querySelector('#bgMonthSelect+button'); if(userSettings.monthlyBgs && userSettings.monthlyBgs[m]) { btn.innerText="已設定"; btn.style.background="#d66b6b"; } else { btn.innerText="未設定"; btn.style.background="#444"; } }
+        function clearMonthBg() { delete userSettings.monthlyBgs[document.getElementById('bgMonthSelect').value]; tempMonthBg='CLEAR'; updateMonthInputStatus(); }
+        function saveSettings() {
+            const u = userSettings;
+            u.colors.day = document.getElementById('colorDay').value; u.colors.mid = document.getElementById('colorMid').value; u.colors.night = document.getElementById('colorNight').value; u.colors.off = document.getElementById('colorOff').value; u.colors.memo = document.getElementById('colorMemo').value;
+            const selM = document.getElementById('bgMonthSelect').value;
+            if(tempMonthBg === 'CLEAR') delete u.monthlyBgs[selM]; else if(tempMonthBg) { if(!u.monthlyBgs)u.monthlyBgs={}; u.monthlyBgs[selM]=tempMonthBg; }
+            localStorage.setItem('shift_settings_v13', JSON.stringify(u));
+            applySettings(); updateBackground(); renderCalendar(); closeSettings(); tempMonthBg=null;
+        }
+
+        function updateBackground() { const loc=document.getElementById('locationText'); const m=(currentMonth%12+12)%12; if(userSettings.monthlyBgs && userSettings.monthlyBgs[m]) { document.body.style.backgroundImage=`url('${userSettings.monthlyBgs[m]}')`; loc.innerText=`${m+1}月 自訂`; } else { document.body.style.backgroundImage=`url('${MONTH_DATA[m].img}')`; loc.innerText=MONTH_DATA[m].name; } }
+        function getShift(d) { const diff = Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate()) - new Date(BASE_DATE.getFullYear(),BASE_DATE.getMonth(),BASE_DATE.getDate()))/86400000); let i = diff % SHIFT_CYCLE.length; if(i<0)i+=SHIFT_CYCLE.length; return SHIFT_CYCLE[i]; }
+        function renderCalendar() {
+            const g=document.getElementById('calendarGrid'); document.getElementById('monthDisplay').innerText=`${currentYear}.${String(currentMonth+1).padStart(2,'0')}`; g.innerHTML='';
+            const f=new Date(currentYear,currentMonth,1), l=new Date(currentYear,currentMonth+1,0), dCount=l.getDate(), start=f.getDay(), today=new Date().toISOString().split('T')[0];
+            for(let i=0;i<start;i++) g.appendChild(document.createElement('div'));
+            for(let d=1;d<=dCount;d++) {
+                const dateObj=new Date(currentYear,currentMonth,d), dStr=`${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const shift=getShift(dateObj), memo=localMemos[dStr]||'', h=userSettings.holidays[dStr], isW=(dateObj.getDay()==0||dateObj.getDay()==6);
+                const el=document.createElement('div'); el.className=`day-card ${dStr==today?'today':''} ${memo?'has-memo':''} ${h?'is-holiday':''} ${isW?'is-weekend':''}`;
+                el.onclick=()=>openMemo(dStr,memo);
+                el.innerHTML=`<div class="day-num">${d}</div>${h?`<div class="holiday-name">${h}</div>`:''}<div class="memo-dot"></div><div class="shift-text t-${shift}">${shift}</div><div class="memo-preview">${memo.split('\n')[0]}</div>`;
+                g.appendChild(el);
+            }
+        }
+        function changeMonth(o) { if(isAnimating)return; isAnimating=true; const g=document.getElementById('calendarGrid'), outC=o>0?'slide-out-left':'slide-out-right', inC=o>0?'slide-in-right':'slide-in-left'; g.classList.add(outC); setTimeout(()=>{ currentMonth+=o; if(currentMonth>11){currentMonth=0;currentYear++} if(currentMonth<0){currentMonth=11;currentYear--} updateBackground(); renderCalendar(); g.classList.remove(outC); g.classList.add(inC); setTimeout(()=>{g.classList.remove(inC);isAnimating=false;},300); },300); }
+        const mM=document.getElementById('memoModal'), sM=document.getElementById('settingsModal');
+        function openMemo(d,t) { currentEditDate=d; document.getElementById('modalDate').innerText=d; document.getElementById('memoText').value=t; mM.classList.add('show'); document.getElementById('memoText').focus(); }
+        function closeMemo() { mM.classList.remove('show'); }
+        function openSettings() { sM.classList.add('show'); updateMonthInputStatus(); }
+        function closeSettings() { sM.classList.remove('show'); }
+        window.onclick=e=>{if(e.target==mM)closeMemo();if(e.target==sM)closeSettings();}
 
         init();
     </script>
